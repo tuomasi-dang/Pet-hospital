@@ -1,0 +1,59 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/pet_forge?useSSL=true
+    username: root # MySQL用户名
+    password: 123456 # MySQL密码
+
+  mail:
+    host: smtp.qq.com
+    port: 465
+    username: 2247591496@qq.com # 发送者的邮箱，必须是QQ邮箱
+    password: rxqrlzrioheeecca # 授权码
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          ssl:
+            enable: true
+      default-encoding: UTF-8
+
+  servlet:
+    multipart:
+      max-file-size: 3MB # 允许上传文件的最大大小
+      max-request-size: 3MB # 允许整个请求的最大大小
+
+---
+# 改变服务端口
+server:
+  port: 8083
+---
+# 设置日志输出
+logging:
+  pattern:
+    dateformat: MM-dd HH:mm
+  level:
+    org.springframework.mail: DEBUG
+    javax.mail: DEBUG
+#    org.springframework.context.support.PostProcessorRegistrationDelegate: error #屏蔽bean提前加载的警告
+---
+mybatis-plus:
+  global-config:
+    banner: false
+    db-config:
+      logic-delete-field: isDel
+      logic-not-delete-value: 0
+  mapper-locations: classpath:com/forge/mapper/*.xml
+#  configuration:
+#    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl  # 打印sql语句
+---
+shiro:
+  loginUrl: /login/noLogin # 前后端分离，应该重定向到控制器，只返回json
+  unauthorizedUrl: /login/noPower # 没有权限
+---
+pet-forge:
+  images-path: D:\software\Idea\MixPet-main\images\ # 照片存储路径
+  notice-path: D:\software\Idea\MixPet-main\notice\ # 公告存储路径
+  chatImg-path: D:\software\Idea\MixPet-main\chatImg\ # 聊天图片存储路径
