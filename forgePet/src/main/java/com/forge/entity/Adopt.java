@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
+
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
@@ -15,6 +16,7 @@ import java.time.LocalDateTime;
  * @author tomas
  * @since 2025-02-13
  */
+
 public class Adopt implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -39,6 +41,11 @@ public class Adopt implements Serializable {
      * 领养人id
      */
     private Long clientId;
+
+    /**
+     * 是否有原住民
+     */
+    private String hasResident;
 
     /**
      * 领养押金
@@ -152,19 +159,27 @@ public class Adopt implements Serializable {
         this.isDel = isDel;
     }
 
+    public String getHasResident() {
+        return hasResident;
+    }
+
+    public void setHasResident(String hasResident) {
+        this.hasResident = hasResident;
+    }
+
     @Override
     public String toString() {
         return "Adopt{" +
-            "adoptId = " + adoptId +
-            ", adoptCode = " + adoptCode +
-            ", petId = " + petId +
-            ", clientId = " + clientId +
-            ", adoptMoney = " + adoptMoney +
-            ", adoptInfo = " + adoptInfo +
-            ", inAdopt = " + inAdopt +
-            ", createTime = " + createTime +
-            ", updateTime = " + updateTime +
-            ", isDel = " + isDel +
-        "}";
+                "adoptId = " + adoptId +
+                ", adoptCode = " + adoptCode +
+                ", petId = " + petId +
+                ", clientId = " + clientId +
+                ", adoptMoney = " + adoptMoney +
+                ", adoptInfo = " + adoptInfo +
+                ", inAdopt = " + inAdopt +
+                ", createTime = " + createTime +
+                ", updateTime = " + updateTime +
+                ", isDel = " + isDel +
+                "}";
     }
 }

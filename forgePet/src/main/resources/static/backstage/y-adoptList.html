@@ -32,25 +32,51 @@
                     <div class="form-group row">
                         <label class="col-sm-3 col-form-label" for="clientName">领养人</label>
                         <div class="col-sm-8">
-                            <input class="form-control" list="clientOp" id="clientName" placeholder="领养人"
+                            <input class="form-control" list="clientOp" id="clientName" placeholder="请选择领养人"
                                    autocomplete="off">
                             <datalist id="clientOp">
                             </datalist>
                         </div>
                     </div>
                     <div class="form-group row">
-                        <label class="col-sm-3 col-form-label" for="petName">宠物</label>
+                        <label class="col-sm-3 col-form-label" for="age">出生日期</label>
                         <div class="col-sm-8">
-                            <input class="form-control" list="petOp" id="petName" placeholder="宠物"
-                                   autocomplete="off">
-                            <datalist id="petOp">
-                            </datalist>
+                            <input class="form-control" id="age" placeholder="请填写出生日期" autocomplete="off"
+                                   required readonly>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label class="col-sm-3 col-form-label" for="phone">联系电话</label>
+                        <div class="col-sm-8">
+                            <input class="form-control" id="phone" type="tel"
+                                   placeholder="请填写手机号码"
+                                   pattern="1[3-9]\\d{9}"
+                                   autocomplete="off"
+                                   required
+                                   readonly>
+                            <div class="invalid-feedback" id="phoneFeedback">
+                                请输入正确的手机号码
+                            </div>
                         </div>
                     </div>
                     <div class="form-group row">
-                        <label class="col-sm-3 col-form-label" for="adoptInfo">备注</label>
+                        <label class="col-sm-3 col-form-label" for="hasResident">家中原住民</label>
                         <div class="col-sm-8">
-                            <input class="form-control" id="adoptInfo" placeholder="备注" autocomplete="off">
+                            <select class="form-control" id="hasResident" required>
+                                <option value="原住民成年">原住民成年</option>
+                                <option value="原住民幼年">原住民幼年</option>
+                                <option value="无">无</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label class="col-sm-3 col-form-label" for="petName">宠物</label>
+                        <div class="col-sm-8">
+                            <input class="form-control" list="petOp" id="petName" placeholder="请填写宠物"
+                                   autocomplete="off">
+                            <datalist id="petOp">
+                            </datalist>
                         </div>
                     </div>
                     <div class="form-group row">
@@ -59,10 +85,19 @@
                             <input class="form-control" id="adoptMoney" type="number" autocomplete="off">
                         </div>
                     </div>
+                    <div class="form-group row">
+                        <label class="col-sm-3 col-form-label" for="adoptInfo">备注</label>
+                        <div class="col-sm-8">
+                            <textarea class="form-control" id="adoptInfo" rows="3"
+                                      placeholder="请说明您的领养理由和饲养计划"></textarea>
+                        </div>
+                    </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">关闭</button>
+                <button class="btn btn-outline-secondary" id="clearBtn" type="button" style="display: none;">清空
+                </button>
                 <button class="btn btn-primary" data-bs-dismiss="modal" type="button" id="submitForm">确认提交</button>
             </div>
         </div>
@@ -90,6 +125,9 @@
         <th><input class="form-check-input ms-3" type="checkbox" id="checkALL"><label for="checkALL"></label></th>
         <th>领养单号</th>
         <th>领养人</th>
+        <th>出生日期</th>
+        <th>联系电话</th>
+        <th>原住民情况</th>
         <th>宠物</th>
         <th>备注</th>
         <th>押金</th>
@@ -114,6 +152,8 @@
         getOther("petOp", "pet/noClient")
         bindDataChange("client");
         bindDataChange("pet");
+        // 初始化清空按钮为隐藏状态
+        // document.getElementById('clearBtn').style.display = 'none';
     }// 向表格类动态添加数据
     function getDataRow(h) {
         const row = document.createElement('tr');
@@ -124,8 +164,16 @@
         h["createTime"] = h["createTime"].toString().replaceAll("T", ' ')
         const inAdoptGroup = ["未通过", "通过", "待审核"];
         h["inAdopt"] = inAdoptGroup[~~h["inAdopt"]]
-        const group02 = ["adoptCode", "clientName", "petName",
-            "adoptInfo", "adoptMoney", "createTime", "inAdopt"]
+        const group02 = ["adoptCode",
+            "clientName",
+            "clientAge",
+            "clientTel",
+            "hasResident",
+            "petName",
+            "adoptInfo",
+            "adoptMoney",
+            "createTime",
+            "inAdopt"]
         for (let i = 0; i < group02.length; i++) {
             row.appendChild(sss.cell(h[group02[i]]))
         }
@@ -153,29 +201,93 @@
         return row;
     }//表单数据转json
     function formToJson() {
-        const groupForm = ["adoptId", "petId", "clientId", "adoptCode", "adoptInfo", "adoptMoney"]//表单数据转json
+        const groupForm = ["adoptId", "petId", "clientId", "adoptCode", "adoptInfo", "adoptMoney", "age", "phone", "hasResident"]//表单数据转json
         return sss.getVal(groupForm)
     }//json数据转表单
     function jsonToForm(h) {
-        const groupForm = ["adoptId", "petId", "clientId", "adoptCode",
-            "clientName", "petName", "adoptInfo", "adoptMoney", "createTime"]
+        const groupForm = ["adoptId", "petId", "clientId", "adoptCode", "clientName", "petName", "adoptInfo", "adoptMoney", "createTime", "age", "phone", "hasResident"]
         sss.setVal(groupForm, h)
     }//查找特定角色数据并赋予下拉框
+    // 存储客户数据
+    let clientsData = [];
+    // 存储宠物数据
+    let petsData = [];
+
+    // 绑定数据变化事件
+    function bindDataChange(type) {
+        const inputElement = document.getElementById(type === "client" ? "clientName" : "petName");
+        inputElement.addEventListener('input', function () {
+            const selectedName = this.value;
+            if (type === "client") {
+                const selectedClient = clientsData.find(client => client.roleName === selectedName);
+                if (selectedClient) {
+                    // 显示清空按钮
+                    document.getElementById('clearBtn').style.display = '';
+                    // 获取客户详细信息
+                    axios.get("client/one?id=" + selectedClient.roleId)
+                        .then(response => {
+                            const clientDetails = response.data;
+                            document.getElementById('age').value = clientDetails.clientAge;
+                            document.getElementById('phone').value = clientDetails.clientTel;
+                            document.getElementById('clientId').value = selectedClient.roleId;
+                        })
+                        .catch(error => {
+                            console.error("获取客户详情失败:", error);
+                        });
+                } else {
+                    // 清空字段并隐藏清空按钮
+                    clearClientInfo();
+                }
+            } else if (type === "pet") {
+                const selectedPet = petsData.find(pet => pet.roleName === selectedName);
+                if (selectedPet) {
+                    document.getElementById('petId').value = selectedPet.roleId;
+                } else {
+                    document.getElementById('petId').value = '';
+                }
+            }
+        });
+    }
+
+    function clearClientInfo() {
+        document.getElementById('clientName').value = '';
+        document.getElementById('age').value = '';
+        document.getElementById('phone').value = '';
+        document.getElementById('clientId').value = '';
+        document.getElementById('clearBtn').style.display = 'none';
+    }
+
+    // 添加清空按钮点击事件
+    document.getElementById('clearBtn').addEventListener('click', function () {
+        clearClientInfo();
+    });
+
     function getOther(dataId, role) {
         axios(role).then(resp => {
             const json = resp.data;
-            document.getElementById(dataId).innerHTML = ''
-            for (let i = 0; i < json.length; i++) {
-                const {roleName, roleId} = json[i]
-                document.getElementById(dataId).innerHTML += '<option value="' + roleId + '">' + roleName + '</option>'
+            document.getElementById(dataId).innerHTML = '';
+
+            if (role === "client") {
+                clientsData = json; // 存储客户数据
+            } else if (role === "pet/noClient") {
+                petsData = json; // 存储宠物数据
             }
-        })
+
+            for (let i = 0; i < json.length; i++) {
+                const {roleName, roleId} = json[i];
+                const option = document.createElement('option');
+                option.value = roleName;
+                option.setAttribute('data-id', roleId);
+                document.getElementById(dataId).appendChild(option);
+            }
+        });
     }//通过与拒绝
     function adoptOrRefuse(adoptId, isAdopt) {
-        axios.put("adopt/adopt",{
-            "adoptId":adoptId,
-            "isAdopt":isAdopt
+        axios.put("adopt/adopt", {
+            "adoptId": adoptId,
+            "isAdopt": isAdopt
         }).then(resp => sss.commonResp(resp))
     }
+
 </script>
 </html>

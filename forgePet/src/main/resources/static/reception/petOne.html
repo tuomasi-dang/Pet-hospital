@@ -57,21 +57,55 @@
             <div class="modal-body">
                 <form class="d-grid gap-3">
                     <div class="form-group row">
-                        <label class="col-sm-3 col-form-label" for="adoptInfo">申请理由</label>
+                        <label class="col-sm-3 col-form-label" for="clientName">领养人</label>
                         <div class="col-sm-8">
-                            <input class="form-control" id="adoptInfo" placeholder="申请理由" autocomplete="off">
+                            <input class="form-control" list="clientOp" id="clientName" placeholder="请选择领养人"
+                                   autocomplete="off" required>
+                            <datalist id="clientOp">
+                            </datalist>
                         </div>
                     </div>
                     <div class="form-group row">
-                        <label class="col-sm-3 col-form-label" for="adoptMoney">押金</label>
+                        <label class="col-sm-3 col-form-label" for="age">出生日期</label>
                         <div class="col-sm-8">
-                            <input class="form-control" id="adoptMoney" type="number"  autocomplete="off" value="200">
+                            <input class="form-control" id="age" autocomplete="off" required readonly>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label class="col-sm-3 col-form-label" for="phone">联系电话</label>
+                        <div class="col-sm-8">
+                            <input class="form-control" id="phone" autocomplete="off" required readonly>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label class="col-sm-3 col-form-label" for="hasResident">家中原住民</label>
+                        <div class="col-sm-8">
+                            <select class="form-control" id="hasResident" required>
+                                <option value="原住民成年">原住民成年</option>
+                                <option value="原住民幼年">原住民幼年</option>
+                                <option value="无">无</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label class="col-sm-3 col-form-label" for="adoptMoney">押金(元)</label>
+                        <div class="col-sm-8">
+                            <input class="form-control" id="adoptMoney" type="number" value="200" min="200" required>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label class="col-sm-3 col-form-label" for="adoptInfo">申请理由</label>
+                        <div class="col-sm-8">
+                            <textarea class="form-control" id="adoptInfo" rows="3"
+                                      placeholder="请说明您的领养理由和饲养计划" required></textarea>
                         </div>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">关闭</button>
+                <button class="btn btn-outline-secondary ms-2" id="clearBtn" style="display: none;" type="button">清空
+                </button>
                 <button class="btn btn-primary" data-bs-dismiss="modal" type="button" onclick="addAdopt()">确认申请
                 </button>
             </div>
@@ -87,40 +121,158 @@
     // 建立对象
     const unt = new FrontUntil()
     const byID = id => document.getElementById(id)
-    window.onload = () => {
+
+    // 存储客户数据
+    let clientsData = [];
+
+    // 页面加载时获取宠物信息和客户列表
+    window.onload = function () {
+        getClientList();
+
         const href = window.location.href;
         if (href.indexOf("?") === -1) return;
         const petId = href.split("?")[1];
         if (isNaN(parseInt(petId))) return;
-        Promise.all([axios("pet/one?petId=" + petId),
-            axios("adopt/inAdopt?petId=" + petId)])
-            .then(result => {
-                petMes(result[0]["data"]);
-                if (result[1]["data"] > 0) {
-                    byID("firstBtn").style.display = "none"
-                    byID("secondBtn").style.display = ""
+
+        Promise.all([
+            axios("pet/one?petId=" + petId),
+            axios("adopt/inAdopt?petId=" + petId)
+        ]).then(result => {
+            petMes(result[0]["data"]);
+            if (result[1]["data"] > 0) {
+                byID("firstBtn").style.display = "none"
+                byID("secondBtn").style.display = ""
+            }
+        })
+    }
+
+    // 获取客户列表
+    function getClientList() {
+        axios("client").then(resp => {
+            clientsData = resp.data;
+            const datalist = byID("clientOp");
+            datalist.innerHTML = '';
+
+            clientsData.forEach(client => {
+                const option = document.createElement('option');
+                option.value = client.roleName; // 显示名称
+                option.setAttribute('data-id', client.roleId);
+                datalist.appendChild(option);
+            });
+
+            // 添加事件监听器，当选择客户时获取详细信息
+            byID("clientName").addEventListener('input', function () {
+                const selectedName = this.value;
+                const selectedClient = clientsData.find(client => client.roleName === selectedName);
+
+                if (selectedClient) {
+                    byID("clearBtn").style.display = "";
+                    axios.get("client/one?id=" + selectedClient.roleId)
+                        .then(response => {
+                            const clientDetails = response.data;
+                            byID("age").value = clientDetails.clientAge;
+                            byID("phone").value = clientDetails.clientTel;
+                        })
+                        .catch(error => {
+                            console.error("获取客户详情失败:", error);
+                            showAlert("获取客户信息失败，请重试", "alert-danger");
+                        });
+                } else {
+                    byID("age").value = '';
+                    byID("phone").value = '';
+                    // 隐藏清空按钮
+                    byID("clearBtn").style.display = "none";
                 }
-            })
-    }// 宠物信息
+            });
+        });
+    }
+
+    // 宠物信息
     const petMes = h => {
         const {petSex, petAge, petPhoto} = h
         byID("petPhoto").src = `${BACK_URL}common/download?name=${petPhoto}`;
         h["petSex"] = petSex ? "公" : "母"
         h["petAge"] = unt.age(petAge)
         unt.setInnerText(h, ["petName", "petSex", "petAge", "petVariety", "petStatus", "petInfo", "petId"])
-    }// 提交申请
+    }
+
+    // 添加清空按钮点击事件
+    byID("clearBtn").addEventListener('click', function () {
+        byID("clientName").value = '';
+        byID("age").value = '';
+        byID("phone").value = '';
+        this.style.display = "none";
+    });
+
+    // 提交领养申请
     const addAdopt = () => {
+        const selectedName = byID("clientName").value;
+        const selectedClient = clientsData.find(client => client.roleName === selectedName);
+
+        if (!selectedClient) {
+            showAlert("请选择有效的领养人", "alert-danger");
+            return;
+        }
+
         const json = {
             "petId": byID("petId").innerText,
-            "adoptInfo": byID("adoptInfo").value,
-            "adoptMoney": byID("adoptMoney").value
-        }
-        axios.post("adopt/adoptPet", json).then(resp => {
-            showAlert(resp.data["msg"], "alert-success")
-            byID("firstBtn").style.display = "none"
-            byID("secondBtn").style.display = ""
-        })
-    }
-</script>
+            "clientId": selectedClient.roleId,
+            "name": selectedName,
+            "age": parseInt(byID("age").value),
+            "phone": byID("phone").value.trim(),
+            "hasResident": byID("hasResident").value,
+            "adoptMoney": parseFloat(byID("adoptMoney").value),
+            "adoptInfo": byID("adoptInfo").value.trim()
+        };
 
+        // 表单验证
+        if (!json.name) {
+            showAlert("请选择领养人", "alert-danger");
+            return;
+        }
+
+        if (!json.age || json.age < 18) {
+            showAlert("领养人年龄必须年满18岁", "alert-danger");
+            return;
+        }
+
+        if (!/^1[3-9]\d{9}$/.test(json.phone)) {
+            showAlert("联系电话格式不正确", "alert-danger");
+            return;
+        }
+
+        if (!json.hasResident) {
+            showAlert("请选择家中是否有原住民", "alert-danger");
+            return;
+        }
+
+        if (!json.adoptInfo || json.adoptInfo.length < 10) {
+            showAlert("请填写至少10个字的申请理由", "alert-danger");
+            return;
+        }
+
+        if (json.adoptMoney < 200) {
+            showAlert("押金不能少于200元", "alert-danger");
+            return;
+        }
+
+        // 提交数据
+        axios.post("adopt/adoptPet", json)
+            .then(resp => {
+                if (resp.data.code === 200) {
+                    showAlert(resp.data.msg, "alert-success");
+                    byID("firstBtn").style.display = "none";
+                    byID("secondBtn").style.display = "";
+                    // 关闭模态框
+                    bootstrap.Modal.getInstance(byID("addRolePop")).hide();
+                } else {
+                    showAlert(resp.data.msg || "提交失败，请稍后重试", "alert-danger");
+                }
+            })
+            .catch(error => {
+                console.error("提交出错:", error);
+                showAlert("网络错误，请稍后重试", "alert-danger");
+            });
+    };
+</script>
 </html>
