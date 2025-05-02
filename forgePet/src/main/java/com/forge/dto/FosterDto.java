@@ -11,6 +11,18 @@ public class FosterDto extends Foster {
      * 用户姓名
      */
     private String clientName;
+    /**
+     * 联系人电话
+      */
+    private String clientTel;
+
+    public String getClientTel() {
+        return clientTel;
+    }
+
+    public void setClientTel(String clientTel) {
+        this.clientTel = clientTel;
+    }
 
     public String getPetName() {
         return petName;
